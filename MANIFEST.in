@@ -1,0 +1,10 @@
+include README.md LICENSE pyproject.toml config.example.toml .env.example docker-compose.yml
+recursive-include docs *.md
+recursive-include docs/images *.jpg
+recursive-include deploy *.py *.sh Dockerfile *.json
+global-exclude *.py[cod] *.edit.lock
+prune tests
+prune data
+prune .venv
+prune build
+prune dist

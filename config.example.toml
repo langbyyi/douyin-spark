@@ -1,0 +1,71 @@
+# 初始部署配置：复制为 config.toml。版本更新时保留现有配置。
+# 通知凭据和代理凭据通过 .env 提供。
+# 面板“添加抖音账号”在登录成功后登记并启用新账号；已有账号重新登录保留启用状态。
+# 手动配置账号时启用文件末尾的账号配置示例。
+
+[general]
+timezone = "Asia/Shanghai"
+keep_days = 7                 # 运行结束时清理过期 runs/jobs/ledger；未确认结果仅保留相关账本
+ip_policy = "exact"           # exact：出口 IP 完全一致；subnet：IPv4 同 /24、IPv6 同 /48
+save_raw_responses = true     # 保存 /v1/message/send 原始响应至本次运行目录，用于故障诊断
+# 出口 IP 查询服务：浏览器按配置顺序请求，优先采用 IPv4 结果。
+# ip_echo_urls = ["https://myip.ipip.net/", "https://ip.3322.net/", "https://ddns.oray.com/checkip", "https://api.ipify.org/?format=json", "https://ifconfig.me/ip"]
+
+[schedule]
+enabled = false              # 启用后由面板服务按 times 执行；不创建系统调度任务
+times = ["12:30", "20:30"]    # 通过计划页面编辑；外部调度与面板调度不得重复启用
+
+# MCP 接入控制：面板“设置”页面可切换；缺省值为 true。
+# [mcp]
+# enabled = true              # false 时 spark mcp 拒绝启动；面板与每日计划保持原有状态
+
+[timing]
+jitter_minutes = 10          # CLI 启动及计划随机延迟上限；--now 仅跳过 CLI 启动延迟
+gap_seconds = [25, 80]        # 相邻发送对象之间的随机间隔
+typing_delay_ms = [60, 170]   # 逐字输入的随机间隔
+send_timeout_seconds = 15    # 会话就绪与发送接口回执的各阶段等待上限
+
+[browser]
+channel = "chrome"           # 可选值：chrome（系统 Google Chrome）、msedge、chromium
+offscreen = true             # Windows/Linux 桌面尝试使用屏幕外窗口；无显示服务环境使用 Xvfb
+# headless = true            # run/check/friends 无头模式；缺省值为 false，与 login.headless 独立
+# executable_path = "C:/Program Files/Google/Chrome/Application/chrome.exe"
+
+[messages]
+# 本地每日短句示例：["每日一言 ✨\n{daily_quote}"]；内置 30 句，按日期轮换。
+templates = [
+  "今天也来续个火花 🔥",
+  "来打个卡，火花别断啦～",
+  "火花续上，今天也要开心呀 ✨",
+]
+hitokoto = true              # 模板包含 {hitokoto}/{source} 时请求一言接口
+hitokoto_url = "https://v1.hitokoto.cn/?c=d&c=i&encode=json"
+hitokoto_fallback = "今天也要元气满满"
+
+[notify]
+enabled = true               # 通知总开关；false 时禁用结果推送
+
+# 临时网页登录服务：spark login <账号> --mode web 或 MCP login_start。
+[login]
+# 缺省使用无头模式；配置 SPARK_VNC_PASSWORD 且未指定 headless 时使用有头模式。
+# headless = true            # 仅作用于网页登录；noVNC 交互验证设为 false
+# public_url = "http://127.0.0.1:8789"   # SSH 本地转发入口；公网入口使用 HTTPS；SPARK_PUBLIC_URL 优先
+bind = "0.0.0.0"             # 监听地址；仅本机访问时使用 127.0.0.1
+port = 8789                  # 独立 CLI/MCP 登录端口；远程访问使用 SSH 转发或 HTTPS 反向代理
+timeout_minutes = 10         # 登录链接有效期，取值 1～60 分钟；超时后关闭临时服务
+
+# 账号配置示例：取消注释后生效，支持多个 [[accounts]] 配置段。
+# [[accounts]]
+# name = "main"                # ASCII 字母、数字、_、-，长度 1～32；同时作为数据目录名
+# remark = ""                  # 可选显示名称；未配置时使用登录后读取的抖音昵称
+# enabled = true               # 缺省值为 true；已有账号重新登录保留此值
+# friends = ["好友备注A", "周末小群"]   # 使用可唯一识别的好友备注名、昵称或完整群聊名称
+# proxy = ""                   # 可使用 "${MAIN_PROXY}" 引用 .env；登录与运行代理保持一致
+# 代理格式：http://用户名:密码@主机:端口，或 socks5://主机:端口。
+# HTTP 代理凭据中的 @、: 等字符需采用百分号编码（%40、%3A）；SOCKS 代理不接受凭据。
+# templates = ["账号专用消息模板"]
+
+# [[accounts]]
+# name = "alt"
+# friends = ["好友备注C"]
+# proxy = "${ALT_PROXY}"

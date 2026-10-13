@@ -1,0 +1,80 @@
+# Project service: docker compose up -d spark (enable the plan in the panel).
+# Stop everything it owns: docker compose stop spark.
+# Manual commands: docker compose run --rm spark run|check|status
+# Login via the panel, or stop spark before a manual --service-ports login.
+# MCP server for AI clients, started on demand over SSH (no port for MCP itself):
+#   ssh user@host docker compose -f /opt/douyin-spark/docker-compose.yml \
+#       run --rm -T --service-ports mcp
+
+x-spark: &spark
+  build:
+    context: .
+    dockerfile: deploy/docker/Dockerfile
+  image: dyspark:latest
+  env_file: .env
+  environment:
+    # Only trust the actual reverse proxy IP(s); the default fails closed for
+    # Docker bridge traffic. See docs/cloud.md before exposing the panel.
+    FORWARDED_ALLOW_IPS: "${SPARK_GUI_TRUSTED_PROXIES:-127.0.0.1}"
+  volumes:
+    - ./data:/data
+    # Mount the directory so atomic config replacement is supported.
+    - ./config:/config
+  shm_size: "1gb"
+
+services:
+  # Linux quick start: host networking keeps the GUI on the host loopback.
+  # deploy/docker/start.sh initializes bind-mounted storage before starting it.
+  local:
+    <<: *spark
+    command: ["gui", "--host", "127.0.0.1", "--no-open"]
+    network_mode: host
+    environment:
+      FORWARDED_ALLOW_IPS: "127.0.0.1"
+      SPARK_LOGIN_BIND: "127.0.0.1"
+      # Remote noVNC uses the bridge deployment documented in docs/cloud.md.
+      SPARK_VNC_PASSWORD: ""
+    volumes:
+      - ./data:/data
+      - ./config:/config
+      - ./config.example.toml:/defaults/config.toml:ro
+    restart: "no"
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          response = urllib.request.urlopen('http://127.0.0.1:8765/static/icon.svg', timeout=2);
+          assert response.status == 200 and response.headers.get('Content-Type', '').startswith('image/svg+xml');
+          response.close()
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 6
+    profiles: ["local"]
+
+  spark:
+    <<: *spark
+    command: ["gui", "--host", "0.0.0.0", "--no-open"]
+    restart: "no"
+    stop_grace_period: 30s
+    # Public access goes through the host's HTTPS reverse proxy.
+    ports:
+      - "127.0.0.1:8765:8765"
+      - "127.0.0.1:8789:8789"   # standalone CLI login only; panel login uses its own origin
+      - "127.0.0.1:6080:6080"   # temporary noVNC; password protected
+
+  # MCP over stdio: the AI client starts it (`run --rm -T`), it exits with the
+  # client. login_start opens the login page on 8789 inside this container.
+  mcp:
+    <<: *spark
+    command: ["mcp"]
+    restart: "no"
+    stdin_open: true
+    profiles: ["mcp"]
+    ports:
+      - "127.0.0.1:8789:8789"   # login page while login_start runs
+      - "127.0.0.1:6080:6080"   # noVNC captcha fallback (needs SPARK_VNC_PASSWORD)

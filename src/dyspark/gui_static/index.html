@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <meta name="spark-token" content="{{TOKEN}}" />
+  <title>dyspark 控制面板</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="16x16 24x24 32x32 48x48 64x64 128x128 256x256" />
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml" sizes="any" />
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" sizes="180x180" />
+  <link rel="stylesheet" href="/static/style.css?v={{STAMP}}" />
+</head>
+<body class="panel-shell">
+  <div id="toast" class="toast hidden" role="status"></div>
+  <div class="panel-chrome">
+  <header class="top">
+    <div>
+      <h1>控制面板 <span class="ver">dyspark v{{VERSION}}</span></h1>
+      <p class="sub" id="meta-line">控制面板 · 已认证</p>
+    </div>
+    <div class="top-actions">
+      <a class="ghost repository-link" href="https://github.com/langbyyi/douyin-spark" target="_blank" rel="noopener noreferrer" aria-label="GitHub 仓库（在新标签页打开）" title="查看源码与项目文档">
+        <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg>
+        <span>GitHub</span>
+      </a>
+      <button type="button" id="btn-refresh" class="ghost">刷新</button>
+      <button type="button" id="btn-password" class="ghost">修改密码</button>
+      <button type="button" id="btn-logout" class="ghost">退出面板</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="控制面板功能">
+    <div class="sidebar-brand" aria-hidden="true"><img src="/static/icon.svg" width="36" height="36" alt="" /><strong>dyspark</strong></div>
+    <button type="button" data-tab="status" class="active">概览</button>
+    <button type="button" data-tab="accounts">账号</button>
+    <button type="button" data-tab="schedule">计划</button>
+    <button type="button" data-tab="logs">日志</button>
+    <button type="button" data-tab="settings">设置</button>
+  </nav>
+  </div>
+
+  <main>
+    <section id="tab-accounts" class="panel">
+      <div id="account-workspace" class="account-workspace">
+        <aside class="account-rail" aria-label="选择抖音账号">
+          <div class="account-rail-heading"><h3>我的账号</h3><span id="account-directory-count" class="hint"></span></div>
+          <button type="button" id="account-picker-toggle" class="account-picker-toggle ghost" aria-expanded="false" aria-controls="account-picker-content"><span id="account-picker-avatar" class="account-picker-avatar" aria-hidden="true"></span><span class="account-list-copy"><span id="account-picker-name" class="account-list-name">选择账号</span><span id="account-picker-meta" class="account-list-meta"></span></span><span class="account-picker-action">切换<span aria-hidden="true"> ▾</span></span></button>
+          <div id="account-picker-content" class="account-picker-content">
+            <label class="account-search" for="account-search"><span class="visually-hidden">搜索账号</span><input id="account-search" type="search" placeholder="搜索备注、昵称或账号 ID" maxlength="128" /></label>
+            <label class="account-filter" for="account-filter"><span class="visually-hidden">筛选账号状态</span><select id="account-filter"><option value="all">全部账号</option><option value="enabled">已启用</option><option value="disabled">已停用</option><option value="attention">需要处理</option></select></label>
+            <div id="account-directory" class="account-directory" role="group" aria-label="抖音账号列表"></div>
+          </div>
+          <button type="button" id="account-add-open" data-add-account class="ghost">＋ 添加抖音账号</button>
+          <select id="account-edit-name" hidden aria-label="管理账号"></select>
+        </aside>
+        <div id="account-detail" class="account-detail">
+          <header class="account-detail-header"><div class="account-avatar" id="account-avatar" aria-hidden="true">抖</div><div class="account-heading-copy"><h3 id="account-detail-name" tabindex="-1"></h3><p id="account-detail-subtitle" class="hint"></p></div><div class="account-badges"><span id="account-connection-badge" class="pill"></span><span id="account-enabled-badge" class="pill hidden">已停用</span></div></header>
+          <nav id="account-sections" class="account-sections" role="tablist" aria-label="当前账号功能">
+            <button type="button" id="account-section-overview" data-account-section="overview" role="tab" aria-controls="account-pane-overview" aria-selected="true" aria-pressed="true">概况</button>
+            <button type="button" id="account-section-targets" data-account-section="targets" role="tab" aria-controls="tab-friends" aria-selected="false" aria-pressed="false">续火花对象</button>
+            <button type="button" id="account-section-messages" data-account-section="messages" role="tab" aria-controls="account-pane-messages" aria-selected="false" aria-pressed="false">消息模板</button>
+            <button type="button" id="account-section-login" data-account-section="login" role="tab" aria-controls="tab-login" aria-selected="false" aria-pressed="false" class="hidden">登录</button>
+            <button type="button" id="account-section-settings" data-account-section="settings" role="tab" aria-controls="account-pane-settings" aria-selected="false" aria-pressed="false">账号设置</button>
+          </nav>
+          <div id="account-pane-overview" class="account-pane account-overview" data-account-pane="overview" role="tabpanel" aria-labelledby="account-section-overview">
+            <div class="card account-overview-card"><div class="section-title"><h3>账号连接</h3><button type="button" id="account-check" class="ghost">检查账号</button></div><div id="account-health" aria-live="polite"></div><div class="account-status-actions"><button type="button" id="account-login">扫码登录</button></div><p id="account-login-hint" class="hint"></p></div>
+            <div class="card account-run-card"><div class="section-title"><h3>发送消息</h3><button type="button" id="btn-run-now">立即发送</button></div><p id="run-hint" class="hint"></p><p id="run-msg" class="msg" role="status"></p><div id="job-summary" class="empty-state" aria-live="polite"><h3>暂无任务结果</h3></div><details id="job-details" class="hidden"><summary>原始结果</summary><pre id="run-result" class="log"></pre></details></div>
+          </div>
+    <section id="tab-friends" class="account-pane hidden" data-account-pane="targets" role="tabpanel" aria-labelledby="account-section-targets">
+      <div class="card targets-card">
+        <div class="section-title">
+          <div class="targets-heading"><h3 id="friends-count">发送名单</h3><span id="friends-total" class="pill">0</span></div>
+          <select id="friends-account" hidden aria-label="发送账号"></select>
+          <button type="button" id="btn-fetch-friends" class="ghost">拉取抖音会话</button>
+        </div>
+        <p id="friends-msg" class="msg" role="status"></p>
+        <form id="friend-form" class="target-add-form">
+          <label for="friend-name">添加好友或群聊<input id="friend-name" type="text" placeholder="好友备注、昵称或完整群名" maxlength="64" /></label>
+          <button type="submit" id="btn-add-friend">添加对象</button>
+        </form>
+        <label class="target-search"><span class="visually-hidden">搜索发送名单</span><input type="search" id="friends-search" placeholder="搜索名单" maxlength="64" /></label>
+        <ul id="friends-list" class="list"></ul>
+        <details class="target-rules"><summary>群聊说明</summary><p class="hint">仅确认本账号的发送结果，不检查其他成员发言。</p></details>
+        <div id="friends-live" class="hidden">
+          <h3 id="friends-live-title">抖音会话</h3>
+          <p id="friends-live-status" class="hint"></p>
+          <ul id="friends-live-list" class="list"></ul>
+        </div>
+      </div>
+    </section>
+
+      <div id="account-login-slot"><section id="tab-login" class="account-pane hidden" data-account-pane="login" role="tabpanel" aria-labelledby="account-section-login">
+        <div class="page-heading login-heading"><h3>账号登录</h3><button type="button" id="account-login-close" class="ghost" title="返回概况，不取消正在进行的登录">返回概况</button></div>
+        <div class="card login-card">
+          <div class="login-actions">
+            <select id="login-account" hidden aria-label="登录账号"></select>
+            <button type="button" id="btn-login-start">开始登录</button>
+            <button type="button" id="btn-login-cancel" class="danger ghost" disabled>取消登录</button>
+          </div>
+          <div id="login-progress" class="login-progress hidden" aria-live="polite">
+            <div class="login-progress-heading"><strong id="login-progress-title"></strong><span id="login-elapsed" class="hint"></span></div>
+            <p id="login-session-line" class="hint">正在登录 <strong id="login-session-account"></strong></p>
+            <p id="login-loading-hint" class="hint hidden"></p>
+          </div>
+          <p id="login-msg" class="msg" role="status">尚未开始</p>
+          <p id="login-connection-msg" class="msg" role="status"></p>
+          <details id="login-error-details" class="login-details hidden"><summary>查看详情</summary><pre id="login-error-detail"></pre></details>
+          <details id="login-route-details" class="login-details hidden"><summary>连接方式</summary><p id="login-route" class="hint"></p></details>
+          <div class="login-stage">
+          <div class="login-qr-panel">
+            <div id="login-qr-placeholder" class="login-qr-placeholder"><span aria-hidden="true">▦</span><strong>二维码登录</strong><p class="hint">开始后使用抖音扫码</p></div>
+            <img id="login-qr" class="qr hidden" alt="登录二维码" />
+            <button type="button" id="login-image-retry" class="ghost hidden">重新加载图片</button>
+            <button type="button" id="login-qr-refresh" class="ghost hidden">刷新二维码</button>
+            <p id="login-url" class="url"></p>
+          </div>
+          <div id="login-sms" class="hidden">
+            <h3 id="login-sms-title">短信验证</h3>
+            <p id="login-sms-description" class="hint"></p>
+            <div class="login-sms-form">
+              <label id="login-phone-row">手机号<input id="login-phone" type="tel" autocomplete="tel" maxlength="16" placeholder="11 位手机号"></label>
+              <label>短信验证码<input id="login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="填写手机收到的验证码"></label>
+              <button id="login-sms-send" type="button" class="ghost">获取验证码</button><button id="login-sms-verify" type="button">提交验证码</button>
+            </div>
+            <p id="login-sms-msg" class="msg" role="status"></p>
+            <details id="login-platform-details" class="hidden">
+              <summary>查看抖音验证页当前画面（输入内容已遮挡）</summary>
+              <img id="login-platform-screen" class="verification-preview" alt="抖音验证页当前画面，输入内容已遮挡">
+            </details>
+          </div>
+          </div>
+        </div>
+      </section></div>
+          <form id="account-edit-form" class="hidden">
+            <div id="account-pane-targets-extra" class="card account-pane hidden" data-account-pane="targets">
+          <details id="account-targets-advanced" class="settings-disclosure">
+            <summary>批量编辑发送名单</summary>
+            <label for="account-friends">发送对象（每行一个好友备注名或完整群名）<textarea id="account-friends" rows="4" maxlength="32500"></textarea></label>
+            <p class="hint">仅向名单中的好友和群聊发送。拉取会话后，需要手动加入名单。</p>
+          </details>
+          </div>
+            <div id="account-pane-messages" class="card account-pane message-workspace hidden" data-account-pane="messages" role="tabpanel" aria-labelledby="account-section-messages">
+              <div class="message-edit-panel">
+                <div class="section-title"><div class="targets-heading"><h3>消息模板</h3><span id="account-template-count" class="pill"></span></div><button type="button" id="account-template-add" class="ghost">＋ 添加模板</button></div>
+                <p id="account-message-scope" class="hint">本账号全部对象共用，随机发送一条。</p>
+                <details class="template-presets"><summary>快捷文案</summary><div id="account-template-presets" class="template-preset-list"></div></details>
+                <div class="template-toolbar"><span id="account-template-state" class="hint"></span><button type="button" id="account-template-inherit" class="ghost">使用全局模板</button></div>
+                <section id="account-global-templates" class="inherited-templates hidden" aria-label="当前使用的全局文案"><div class="section-title"><h4>正在使用的文案</h4><button type="button" id="account-template-customize" class="ghost">编辑这些文案</button></div><div id="account-global-template-list" class="inherited-template-list"></div></section>
+                <div id="account-template-list" class="message-template-list"><label for="account-templates">消息模板 1</label><textarea id="account-templates" rows="3" maxlength="2000"></textarea></div>
+                <details class="template-variables"><summary>插入变量</summary><div id="account-template-variables" class="template-variable-list"><button type="button" class="ghost" data-template-variable="friend" title="好友备注或群名">{friend}</button><button type="button" class="ghost" data-template-variable="date" title="日期，如 10月12日">{date}</button><button type="button" class="ghost" data-template-variable="weekday" title="星期">{weekday}</button><button type="button" class="ghost" data-template-variable="days" title="缓存的火花天数，未读取时为空">{days}</button><button type="button" class="ghost" data-template-variable="daily_quote" title="内置每日一言，按日期轮换，无需联网">{daily_quote}</button><button type="button" class="ghost" data-template-variable="hitokoto" title="在线一言内容，未开启时使用回退文本">{hitokoto}</button><button type="button" class="ghost" data-template-variable="source" title="在线一言来源">{source}</button></div></details>
+              </div>
+          </div>
+            <div id="account-pane-settings" class="card account-pane hidden" data-account-pane="settings" role="tabpanel" aria-labelledby="account-section-settings">
+          <div class="account-settings-grid">
+            <section class="settings-group"><h3>基本信息</h3><label for="account-remark">账号备注<input id="account-remark" maxlength="64" placeholder="例如日常号、工作号" /></label></section>
+            <section class="settings-group">
+          <details id="account-advanced" class="settings-disclosure">
+            <summary>代理</summary>
+            <div class="proxy-field">
+              <div class="proxy-field-input">
+                <label for="account-proxy-ref">代理地址</label>
+                <input id="account-proxy-ref" maxlength="256" placeholder="如 http://user:pass@ip:port" />
+              </div>
+              <button type="button" id="account-proxy-test" class="ghost">测试连通</button>
+            </div>
+            <p class="hint">修改后需重新登录并检查。</p>
+            <p id="account-proxy-test-msg" class="msg" role="status"></p>
+          </details>
+            </section>
+          </div>
+          <details id="account-delete-section" class="settings-disclosure danger-zone"><summary>删除账号</summary><p class="hint">登录资料与历史记录保留；任务执行期间不能删除。</p><button type="button" id="account-delete" class="danger ghost">删除账号</button><p id="account-delete-msg" class="msg" role="status"></p></details>
+          </div>
+          </form>
+          <div id="account-save-bar" class="account-save-bar hidden"><span id="account-draft-status" class="hint" role="status" aria-live="polite"></span><div class="account-save-actions"><button type="submit" id="account-save" form="account-edit-form" disabled>保存修改</button><button type="button" id="account-reset" class="ghost" disabled>撤销</button></div></div>
+          <p id="account-edit-msg" class="msg" role="status"></p>
+        </div>
+        <div id="account-empty" class="empty-state hidden"><h3>暂无抖音账号</h3><button type="button" data-add-account>添加账号</button></div>
+      </div>
+
+    </section>
+    <section id="tab-status" class="panel active">
+      <div class="page-heading"><span id="updated-at" class="hint" aria-live="polite">正在同步</span></div>
+      <div id="status-box" aria-live="polite">正在加载账号状态…</div>
+    </section>
+
+    <section id="tab-logs" class="panel">
+      <div class="card logs-card">
+        <div class="logs-toolbar">
+          <label for="logs-service">日志来源
+            <select id="logs-service">
+              <option value="">运行日志</option>
+              <option value="gui">面板服务</option>
+              <option value="mcp">MCP 服务</option>
+            </select>
+          </label>
+          <label id="logs-run-label" for="logs-run">运行记录
+            <select id="logs-run"><option value="">最近一次</option></select>
+          </label>
+          <label for="logs-level">级别
+            <select id="logs-level"><option value="">全部</option><option value="problems">警告和错误</option><option value="ERROR">错误</option><option value="WARNING">警告</option><option value="INFO">信息</option><option value="DEBUG">调试</option></select>
+          </label>
+          <label class="logs-search" for="logs-search">搜索
+            <input id="logs-search" type="search" placeholder="账号、内容或关键词" maxlength="200" />
+          </label>
+          <button type="button" id="btn-logs" class="ghost">刷新</button>
+        </div>
+        <div class="logs-heading">
+          <div class="logs-heading-copy"><h3 id="logs-title">最近一次运行</h3><p id="logs-updated" class="hint" role="status" aria-live="polite">选择记录查看日志</p></div>
+          <span id="logs-count" class="logs-count hidden"></span>
+          <button type="button" id="logs-raw-toggle" class="ghost" aria-pressed="false" aria-controls="logs-box logs-raw" disabled>原始日志</button>
+        </div>
+        <div class="logs-column-head" aria-hidden="true"><span>时间</span><span>级别</span><span>内容</span></div>
+        <div id="logs-box" class="logs-view" role="region" aria-label="日志内容" tabindex="0" aria-busy="false">
+          <p id="logs-empty" class="logs-empty" role="status">正在加载日志…</p>
+        </div>
+        <pre id="logs-raw" class="log hidden" tabindex="0" aria-label="原始日志"></pre>
+        <p id="logs-limit" class="logs-limit hint">最多显示最近 120 行</p>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="panel">
+      <div class="card" id="notification-card">
+        <div class="section-title">
+          <h3>推送通知</h3>
+          <button type="button" id="notify-switch" class="switch" role="switch" aria-checked="false" aria-label="推送通知开关"></button>
+        </div>
+        <p id="notification-state" class="hint" aria-live="polite">正在读取通知状态…</p>
+        <form id="notification-form">
+          <div class="notify-channels">
+            <label for="notify-key">Server酱 SendKey<input id="notify-key" type="text" autocomplete="off" spellcheck="false" maxlength="128" placeholder="SCT…" /></label>
+            <label for="notify-pushplus">PushPlus token<input id="notify-pushplus" type="text" autocomplete="off" spellcheck="false" maxlength="128" placeholder="粘贴 pushplus.plus 的 token" /></label>
+          </div>
+          <div class="row"><button type="submit" id="notify-save">保存</button><button type="button" id="notification-test" class="ghost">发送测试通知</button><button type="button" id="notify-clear-serverchan" class="ghost hidden">移除 Server酱</button><button type="button" id="notify-clear-pushplus" class="ghost hidden">移除 PushPlus</button></div>
+        </form>
+        <p id="notification-msg" class="msg" role="status"></p>
+        <details><summary>微信推送怎么配置</summary><p class="hint">在 <a href="https://sct.ftqq.com" target="_blank" rel="noopener">Server酱</a> 或 <a href="https://www.pushplus.plus" target="_blank" rel="noopener">PushPlus</a> 官网获取 SendKey 或 token，填入上方并保存即生效，可同时配置两种渠道。开启后，每次执行结束均推送结果；同类失败通知 1 小时内仅推送一次。</p></details>
+      </div>
+      <div class="card automation-card">
+        <div class="section-title">
+          <h3>MCP / AI 助手接入</h3>
+          <button type="button" id="mcp-switch" class="switch" role="switch" aria-checked="false" aria-label="MCP 接入开关"></button>
+        </div>
+        <p id="mcp-status" class="hint" aria-live="polite"></p>
+        <p id="mcp-msg" class="msg" role="status"></p>
+        <details><summary>AI 客户端如何接入</summary><p class="hint">终端自检（当前系统可直接运行）：</p><pre id="mcp-command" class="log">spark mcp</pre><p class="hint">客户端 mcpServers 配置（按当前系统与路径生成，粘贴即用）：</p><pre id="mcp-json" class="log">正在加载…</pre><p class="hint">接入仅支持 stdio：AI 客户端在本机启动 <code>spark mcp</code>，浏览器、登录与发送都在同一环境，出口 IP 一致；其他写法见 <a href="/docs/mcp" target="_blank" rel="noopener">MCP 文档</a>。</p></details>
+      </div>
+    </section>
+
+    <section id="tab-schedule" class="panel">
+      <div id="schedule-box" class="schedule-grid">
+        <form id="schedule-form" class="card schedule-editor">
+          <div class="section-title"><h3>每日执行时间</h3><span id="schedule-zone" class="schedule-zone">加载中</span></div>
+          <div id="schedule-times"></div>
+          <button type="button" id="btn-add-time" class="ghost">＋ 添加时间</button>
+          <p id="schedule-msg" class="msg" role="status"></p>
+          <div class="schedule-save"><button type="submit" id="btn-save-schedule" disabled>保存时间</button><button type="button" id="btn-reset-schedule" class="ghost" disabled>撤销</button><span id="schedule-dirty" class="hint" role="status" aria-live="polite"></span></div>
+        </form>
+        <div class="schedule-side">
+          <div class="card schedule-status-card">
+            <div class="section-title"><h3>自动计划</h3><div class="schedule-toggle"><span id="scheduler-badge" class="pill">加载中</span><button type="button" id="scheduler-switch" class="switch" role="switch" aria-label="自动计划开关" aria-checked="false" aria-busy="false" disabled></button></div></div>
+            <div class="schedule-hero"><span class="hint">下次执行</span><strong id="scheduler-next">加载中</strong></div>
+            <dl class="schedule-details">
+              <div><dt>执行状态</dt><dd id="scheduler-status" aria-live="polite">—</dd></div>
+              <div><dt>上次执行</dt><dd id="scheduler-last">—</dd></div>
+              <div><dt>参与账号</dt><dd id="scheduler-accounts">—</dd></div>
+            </dl>
+            <p id="scheduler-error" class="msg err" role="alert"></p>
+            <div id="schedule-next-runs" class="schedule-next hidden"></div>
+            <p id="scheduler-msg" class="msg" role="status"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+      <dialog id="account-add-dialog" class="account-add-dialog" aria-labelledby="account-add-title"><div class="section-title"><h3 id="account-add-title">添加抖音账号</h3><button type="button" id="account-add-close" class="ghost">关闭</button></div>
+        <div id="account-add-prepare" class="card">
+          <div class="proxy-field">
+            <div class="proxy-field-input">
+              <label for="account-add-proxy">代理地址（可选，仅本账号）</label>
+              <input id="account-add-proxy" maxlength="256" placeholder="如 http://user:pass@ip:port" />
+            </div>
+            <button type="button" id="account-add-proxy-test" class="ghost">测试连通</button>
+          </div>
+          <p id="account-add-prepare-msg" class="msg" role="status"></p>
+          <button type="button" id="account-add-start">开始扫码登录</button>
+        </div>
+        <p class="hint">用抖音 App 扫码并完成验证。</p>
+        <div id="account-add-login"></div>
+        <div class="login-actions"><button type="button" id="account-add-retry" class="hidden">重新扫码</button><button type="button" id="account-add-edit-proxy" class="ghost hidden">修改代理</button></div>
+      </dialog>
+  </main>
+
+  <footer>
+    <span>dyspark</span>
+  </footer>
+  <dialog id="password-dialog" class="account-add-dialog" aria-labelledby="password-title">
+    <div class="section-title"><h3 id="password-title">修改面板密码</h3><button type="button" id="password-close" class="ghost">关闭</button></div>
+    <p class="hint">修改后立即生效，所有面板会话将退出。</p>
+    <form id="password-form">
+      <label for="password-current">当前密码<input id="password-current" type="password" autocomplete="current-password" maxlength="1024" required /></label>
+      <label for="password-new">新密码<input id="password-new" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required /></label>
+      <label for="password-confirm">确认新密码<input id="password-confirm" type="password" autocomplete="new-password" minlength="8" maxlength="1024" required /></label>
+      <p class="hint">至少 8 个字符，不能全为空白。</p><button type="submit" id="password-submit">保存新密码</button>
+      <p id="password-msg" class="msg" role="status"></p>
+    </form>
+  </dialog>
+  <script src="/static/panel-settings.js?v={{STAMP}}"></script>
+  <script src="/static/message-templates.js?v={{STAMP}}"></script>
+  <script src="/static/account-controls.js?v={{STAMP}}"></script>
+  <script src="/static/avatars.js?v={{STAMP}}"></script>
+  <script src="/static/account-workspace.js?v={{STAMP}}"></script>
+  <script src="/static/log-viewer.js?v={{STAMP}}"></script>
+  <script src="/static/login-progress.js?v={{STAMP}}"></script>
+  <script src="/static/delivery-failure.js?v={{STAMP}}"></script>
+  <script src="/static/app.js?v={{STAMP}}"></script>
+</body>
+</html>

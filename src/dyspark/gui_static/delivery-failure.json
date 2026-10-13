@@ -1,0 +1,183 @@
+[
+  {
+    "tokens": ["page shows 发送失败"],
+    "reason": "平台回执与页面提示不一致",
+    "guidance": "页面出现发送失败提示，程序无法确认消息结果。",
+    "action": "logs"
+  },
+  {
+    "tokens": ["target page, context or browser has been closed", "browser closed"],
+    "reason": "浏览器会话已关闭",
+    "guidance": "检测账号，确认浏览器可以正常启动。",
+    "action": "check"
+  },
+  {
+    "tokens": [
+      "http 407",
+      "407 proxy authentication",
+      "proxy authentication"
+    ],
+    "reason": "代理认证失败",
+    "guidance": "检查代理账号和密码。",
+    "action": "settings"
+  },
+  {
+    "tokens": [
+      "err_proxy_connection_failed",
+      "err_tunnel_connection_failed"
+    ],
+    "reason": "代理连接失败",
+    "guidance": "检测代理连接，检查代理地址和服务是否可用。",
+    "action": "check"
+  },
+  {
+    "tokens": [
+      "err_name_not_resolved"
+    ],
+    "reason": "网络域名解析失败",
+    "guidance": "检查服务器网络和 DNS。",
+    "action": "check"
+  },
+  {
+    "tokens": [
+      "err_connection_reset",
+      "err_connection_refused",
+      "err_connection_closed"
+    ],
+    "reason": "网络连接中断",
+    "guidance": "检测网络连接后再运行。",
+    "action": "check"
+  },
+  {
+    "tokens": [
+      "页面加载超时"
+    ],
+    "all_tokens": ["page.goto", "timeout"],
+    "reason": "抖音页面加载超时",
+    "guidance": "检测连接，检查代理带宽和页面加载情况。",
+    "action": "check"
+  },
+  {
+    "tokens": [
+      "neither json nor protobuf",
+      "unparsable",
+      "unrecognised envelope",
+      "unexpected response command",
+      "unrecognised",
+      "回执格式",
+      "json body without a send result"
+    ],
+    "reason": "平台回执格式异常",
+    "guidance": "平台返回了无法识别的发送结果。",
+    "action": "logs"
+  },
+  {
+    "tokens": [
+      "no send response",
+      "回执未知",
+      "回执未确认",
+      "未收到平台",
+      "等待平台发送回执"
+    ],
+    "reason": "未收到平台发送回执",
+    "guidance": "程序等待发送结果超时。",
+    "action": "check"
+  },
+  {
+    "tokens": [
+      "userhasbeenblock"
+    ],
+    "reason": "对方限制接收消息",
+    "guidance": "检查对方的私信设置或会话权限。",
+    "action": "friends"
+  },
+  {
+    "tokens": [
+      "usernotinconversation"
+    ],
+    "reason": "没有此会话的发送权限",
+    "guidance": "刷新会话列表，确认仍在该会话或群聊中。",
+    "action": "friends"
+  },
+  {
+    "tokens": [
+      "composer not found"
+    ],
+    "reason": "未找到消息输入框",
+    "guidance": "刷新会话列表，检查聊天页是否完整加载。",
+    "action": "friends"
+  },
+  {
+    "tokens": [
+      "找不到会话",
+      "收件人已变化",
+      "无法确认当前收件人"
+    ],
+    "reason": "未找到或无法确定发送对象",
+    "guidance": "刷新会话列表，检查对象名称。",
+    "action": "friends"
+  },
+  {
+    "tokens": [
+      "账本",
+      "记录损坏"
+    ],
+    "reason": "发送记录异常",
+    "guidance": "查看运行详情，保留原记录后修复记录文件。",
+    "action": "logs"
+  },
+  {
+    "outcomes": [
+      "logged_out"
+    ],
+    "tokens": [
+      "envelope code 8 ",
+      "登录已失效",
+      "登录状态已失效"
+    ],
+    "reason": "登录状态已失效",
+    "guidance": "重新登录抖音账号。",
+    "action": "login"
+  },
+  {
+    "outcomes": [
+      "risk"
+    ],
+    "tokens": [
+      "decision=kick",
+      "check_code=",
+      "checkmessagenotpass",
+      "checkconversationnotpass"
+    ],
+    "reason": "平台安全检查未通过",
+    "guidance": "打开登录页面完成平台验证。",
+    "action": "login"
+  },
+  {
+    "tokens": ["无法核实发送请求", "无法读取当前会话标识", "多个发送请求"],
+    "reason": "无法核实本次发送请求",
+    "guidance": "页面消息标识无法可靠关联，程序未确认本次发送成功。",
+    "action": "logs"
+  },
+  {
+    "tokens": ["http 5"],
+    "reason": "平台发送服务异常",
+    "guidance": "平台返回服务器错误，查看原始错误中的状态码。",
+    "action": "logs"
+  },
+  {
+    "tokens": ["http 4", "envelope code"],
+    "reason": "平台拒绝发送请求",
+    "guidance": "查看原始错误中的平台错误码。",
+    "action": "logs"
+  },
+  {
+    "outcomes": [
+      "unconfirmed",
+      "sending"
+    ],
+    "reason": "未取得平台发送结果",
+    "guidance": "程序未能确认本次发送是否完成。",
+    "action": "check"
+  }
+]

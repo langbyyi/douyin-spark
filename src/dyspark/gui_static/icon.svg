@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">dyspark</title>
+  <desc id="desc">A warm flame inside a chat bubble on an indigo rounded square.</desc>
+  <defs>
+    <linearGradient id="background" x1="64" y1="32" x2="432" y2="496" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6279EF"/>
+      <stop offset="1" stop-color="#3347BA"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="256" y1="158" x2="256" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFB648"/>
+      <stop offset="1" stop-color="#FF633F"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#background)"/>
+  <path d="M174 126H338C376 126 402 153 402 191V298C402 336 376 362 338 362H212L142 398L150 354C124 345 110 324 110 298V191C110 153 136 126 174 126Z" fill="#24358C" opacity=".22" transform="translate(0 10)"/>
+  <path d="M174 126H338C376 126 402 153 402 191V298C402 336 376 362 338 362H212L142 398L150 354C124 345 110 324 110 298V191C110 153 136 126 174 126Z" fill="#FFF"/>
+  <path d="M267 158C277 201 312 213 322 250C334 294 304 333 261 336C218 339 185 310 187 272C188 250 200 230 222 209C220 232 231 241 240 244C231 211 248 184 267 158Z" fill="url(#flame)"/>
+  <path d="M263 250C266 271 285 282 281 299C278 313 268 321 255 321C238 321 228 310 230 296C231 284 244 272 263 250Z" fill="#FFE8A3"/>
+</svg>

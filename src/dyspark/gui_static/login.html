@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>登录 · dyspark 控制面板</title>
+  <link rel="icon" href="/static/favicon.ico" sizes="16x16 24x24 32x32 48x48 64x64 128x128 256x256" />
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml" sizes="any" />
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" sizes="180x180" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="login-body">
+  <main class="login-shell">
+    <section class="card">
+      <p class="brand"><img class="brand-mark" src="/static/icon.svg" width="34" height="34" alt="" /><span class="brand-name">dyspark</span></p>
+      <h1>登录控制面板</h1>
+      <form id="panel-login" method="post" action="/auth/login">
+        <input id="panel-username" name="username" hidden type="text" value="dyspark" autocomplete="username" tabindex="-1" aria-hidden="true" />
+        <label for="panel-password">面板密码</label>
+        <div class="password-field">
+          <input id="panel-password" name="password" type="password" autocomplete="current-password" required autofocus />
+          <button id="login-reveal" class="reveal" type="button" aria-controls="panel-password" aria-pressed="false" title="显示密码">显示</button>
+        </div>
+        <p id="login-error" class="msg err" role="alert" aria-live="polite"></p>
+        <button id="login-submit" type="submit">进入控制面板</button>
+      </form>
+    </section>
+  </main>
+  <script src="/static/login.js"></script>
+</body>
+</html>
