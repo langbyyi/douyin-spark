@@ -33,6 +33,8 @@ RUN if [ "${TARGETARCH}" = "arm64" ] && [ "${PLAYWRIGHT_BROWSER}" != "chromium" 
 
 COPY src ./src
 COPY docs ./docs
+ARG SPARK_BUILD_COMMIT=unknown
+RUN python -c 'import json,sys; from pathlib import Path; Path("src/dyspark/_build.json").write_text(json.dumps({"commit": sys.argv[1]}))' "$SPARK_BUILD_COMMIT"
 RUN pip install ".[gui,mcp]"
 
 COPY deploy/docker/entrypoint.sh /usr/local/bin/spark-entrypoint

@@ -18,6 +18,7 @@ from dyspark.store import (
     read_json,
     write_json_atomic,
 )
+from dyspark.update_state import UpdateError, ensure_available
 
 log = logging.getLogger(__name__)
 RETRY_DELAY = timedelta(minutes=30)
@@ -44,6 +45,8 @@ def _busy(error: Exception) -> bool:
             "另一个 dyspark",
             "busy",
             "正在使用数据目录",
+            "程序正在更新",
+            "更新或其他操作",
         )
     )
 
@@ -329,6 +332,11 @@ class Scheduler:
 
     def _tick(self, settings: Any, now: datetime) -> None:
         assert self._root is not None
+        try:
+            ensure_available(settings.data_dir)
+        except UpdateError:
+            self._view.update(error=None, next_run=None, active_job=None)
+            return
         self._state = self._load()
         self._prune(now, settings)
         slots = self._state["slots"]

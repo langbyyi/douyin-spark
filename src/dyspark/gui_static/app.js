@@ -1676,6 +1676,7 @@
     }
   });
   window.createPanelSettings({ api, onPasswordChanged: redirectToLogin });
+  window.createUpdateControls({ api });
 
   const workspace = window.createAccountWorkspace({
     isLoginActive: name => $("#login-account").disabled && $("#login-account").value === name,

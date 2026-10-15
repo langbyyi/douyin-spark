@@ -47,6 +47,9 @@ from dyspark.locking import file_lock
 from dyspark.login_transport import READ_ROUTES, WRITE_ROUTES
 from dyspark.panel import Backend, PanelError
 from dyspark.relay_page import page_policy, render_page
+from dyspark.update_state import UpdateError
+from dyspark.update_state import operation as update_operation
+from dyspark.updates import UpdateService
 
 log = logging.getLogger(__name__)
 
@@ -70,6 +73,7 @@ def create_app(
 ) -> Starlette:
     """All routes require a password session; ``token`` also gates mutations."""
     backend.internal_login = True
+    updates = UpdateService(backend.settings().data_dir, idle=backend.update_idle)
     password_path = password_path or backend.settings().data_dir / PASSWORD_FILE
     auth_env = load_env(backend.config_path)
     if auth is None:
@@ -130,7 +134,7 @@ def create_app(
     async def call(fn, *args, **kwargs):
         try:
             return await run_in_threadpool(fn, *args, **kwargs)
-        except PanelError as exc:
+        except (PanelError, UpdateError) as exc:
             raise HTTPException(400, str(exc)) from exc
 
     def ok(data: Any = None, **extra: Any) -> JSONResponse:
@@ -209,6 +213,10 @@ def create_app(
         )
         return response
 
+    def change_panel_password(*args):
+        with update_operation(backend.settings().data_dir):
+            return auth.change_password(*args)
+
     async def panel_password(request: Request) -> Response:
         await require_token(request)
         if request.headers.get("content-type", "").split(";", 1)[0].strip() != "application/json":
@@ -231,14 +239,14 @@ def create_app(
             raise HTTPException(400, "两次输入的新密码不一致")
         try:
             changed = await run_in_threadpool(
-                auth.change_password,
+                change_panel_password,
                 body["current_password"],
                 body["new_password"],
                 request.cookies.get(COOKIE_NAME),
                 request.client.host if request.client else "unknown",
                 password_path,
             )
-        except AuthError as exc:
+        except (AuthError, UpdateError) as exc:
             raise HTTPException(400, str(exc)) from exc
         except LoginLimited as exc:
             return JSONResponse(
@@ -258,7 +266,23 @@ def create_app(
         return response
 
     async def api_meta(_: Request) -> JSONResponse:
-        return ok({"version": __version__, "config": str(backend.config_path)})
+        return ok(
+            {"version": __version__, "commit": updates.commit, "config": str(backend.config_path)}
+        )
+
+    async def api_update(_: Request) -> JSONResponse:
+        return ok(await call(updates.status))
+
+    async def api_update_check(request: Request) -> JSONResponse:
+        await require_token(request)
+        return ok(await call(updates.check))
+
+    async def api_update_apply(request: Request) -> JSONResponse:
+        await require_token(request)
+        body = await read_json(request)
+        if set(body) != {"target"} or not isinstance(body["target"], str):
+            raise HTTPException(400, "仅允许指定 target 提交编号")
+        return ok(await call(updates.apply, body["target"]))
 
     async def api_status(request: Request) -> JSONResponse:
         return ok(await call(backend.status, request.query_params.get("account") or None))
@@ -533,6 +557,11 @@ def create_app(
                 )
         return Response("见仓库 docs/mcp.md\n", media_type="text/plain; charset=utf-8")
 
+    async def docs_updates(_: Request) -> Response:
+        doc = Path(__file__).resolve().parents[2] / "docs" / "updates.md"
+        content = doc.read_text(encoding="utf-8") if doc.is_file() else "见仓库 docs/updates.md\n"
+        return Response(content, media_type="text/plain; charset=utf-8")
+
     async def on_error(request: Request, exc: Exception) -> Response:
         if isinstance(exc, HTTPException):
             detail = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
@@ -559,6 +588,9 @@ def create_app(
             "/account-login/{session_id}/{tail:path}", account_login_page, methods=["GET", "POST"]
         ),
         Route("/api/meta", api_meta),
+        Route("/api/update", api_update),
+        Route("/api/update/check", api_update_check, methods=["POST"]),
+        Route("/api/update/apply", api_update_apply, methods=["POST"]),
         Route("/api/status", api_status),
         Route("/api/accounts", api_accounts),
         Route("/api/accounts/add", account_endpoint("add"), methods=["POST"]),
@@ -593,6 +625,7 @@ def create_app(
         Route("/api/notifications/save", api_notifications_save, methods=["POST"]),
         Route("/api/media", api_media),
         Route("/docs/mcp", docs_mcp),
+        Route("/docs/updates", docs_updates),
     ]
     if STATIC.is_dir():
         routes.append(Mount("/static", StaticFiles(directory=str(STATIC)), name="static"))
@@ -604,18 +637,33 @@ def create_app(
         backend.scheduler = Scheduler(backend)
         try:
             await run_in_threadpool(backend.start_service)
+            updates.start()
             if getattr(backend, "automatic_allowed", True):
                 await run_in_threadpool(backend.scheduler.start)
             yield
         finally:
+            await run_in_threadpool(updates.stop)
             await run_in_threadpool(backend.stop_service)
 
-    return Starlette(
+    app = Starlette(
         lifespan=lifespan,
         routes=routes,
-        middleware=[Middleware(PanelAccessMiddleware, auth=auth, require_https=require_https)],
+        middleware=[
+            Middleware(
+                PanelAccessMiddleware,
+                auth=auth,
+                require_https=require_https,
+                health={
+                    "X-Spark-Commit": updates.commit,
+                    "X-Spark-Instance": updates.instance,
+                    "X-Spark-Boot": updates.boot,
+                },
+            )
+        ],
         exception_handlers={HTTPException: on_error, Exception: on_error},
     )
+    app.state.updates = updates
+    return app
 
 
 def serve_gui(
@@ -652,6 +700,7 @@ def _serve_gui(
     import uvicorn
 
     app = create_app(backend, token=token, require_https=not loopback, password_path=password_path)
+    updates = app.state.updates
     app = PanelProxyHeadersMiddleware(
         app, trusted_hosts=os.environ.get("FORWARDED_ALLOW_IPS", "127.0.0.1")
     )
@@ -667,15 +716,19 @@ def _serve_gui(
         opener.daemon = True
         opener.start()
     try:
-        uvicorn.run(
-            app,
-            host=host,
-            port=port,
-            log_level="warning",
-            access_log=False,
-            proxy_headers=False,
-            timeout_graceful_shutdown=1,
+        server = uvicorn.Server(
+            uvicorn.Config(
+                app,
+                host=host,
+                port=port,
+                log_level="warning",
+                access_log=False,
+                proxy_headers=False,
+                timeout_graceful_shutdown=1,
+            )
         )
+        updates.on_shutdown = lambda: setattr(server, "should_exit", True)
+        server.run()
     finally:
         if opener is not None:
             opener.cancel()

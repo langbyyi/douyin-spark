@@ -29,6 +29,8 @@ from dyspark.store import (
     DataDir,
     RunBusyError,
 )
+from dyspark.update_state import UpdateError
+from dyspark.update_state import activity as update_activity
 
 log = logging.getLogger("dyspark")
 
@@ -283,8 +285,19 @@ def main(argv: list[str] | None = None) -> int:
     except SettingsError as exc:
         print(f"配置错误：{exc}", file=sys.stderr)
         return EXIT_CONFIG
+    if args.command == "status":
+        return cmd_status(settings)
     if args.command == "schedule":
         return cmd_schedule(settings, args.config.expanduser().resolve())
+    try:
+        with update_activity(settings.data_dir):
+            return _execute(args, settings)
+    except UpdateError as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_BUSY
+
+
+def _execute(args: argparse.Namespace, settings: Settings) -> int:
     if args.command == "password":
         from dyspark.commands.password import cmd_password_reset
 

@@ -650,6 +650,27 @@ def pid_alive(pid: int) -> bool:
     return True
 
 
+def _process_start(pid: int) -> tuple[str, float] | None:
+    """Identify a Linux process generation, including across container/host restarts."""
+    if os.name != "posix":
+        return None
+    try:
+        process = Path(f"/proc/{pid}")
+        # comm may contain spaces and parentheses; fields after its final ')' are stable.
+        ticks = int((process / "stat").read_text().rsplit(")", 1)[1].split()[19])
+        boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+        namespace = os.readlink(process / "ns/pid")
+        boot_time = next(
+            int(line.split()[1])
+            for line in Path("/proc/stat").read_text().splitlines()
+            if line.startswith("btime ")
+        )
+        started = boot_time + ticks / os.sysconf("SC_CLK_TCK")
+        return f"{boot}:{namespace}:{ticks}", started
+    except (OSError, ValueError, IndexError, StopIteration):
+        return None
+
+
 def _marker_is_stale(marker: Path) -> tuple[bool, str]:
     age = time.time() - marker.stat().st_mtime
     owner = read_json(marker / "owner.json", {})
@@ -658,6 +679,16 @@ def _marker_is_stale(marker: Path) -> tuple[bool, str]:
     known_local_process = same_host and isinstance(pid, int)
     if known_local_process and not pid_alive(pid):
         return True, f"原进程 pid {pid} 已退出"
+    if known_local_process and (process := _process_start(pid)) is not None:
+        identity, started = process
+        recorded = owner.get("process_identity")
+        since = owner.get("since")
+        if isinstance(recorded, str):
+            if recorded != identity:
+                return True, f"原进程 pid {pid} 已被复用"
+        elif isinstance(since, (int, float)) and started > since:
+            # Legacy markers predate process identities; a later start proves PID reuse.
+            return True, f"原进程 pid {pid} 已被复用"
     if not known_local_process and age > STALE_LOCK_SECONDS:
         return True, f"标记已过期（{age:.0f} 秒）"
     detail = f"已运行 {age:.0f} 秒"
@@ -668,10 +699,17 @@ def _marker_is_stale(marker: Path) -> tuple[bool, str]:
 
 def marker_owner(marker: Path) -> dict[str, Any] | None:
     """Who holds the run marker, or ``None`` when it is free (or left by a crash)."""
-    if not marker.is_dir():
+    lock = marker.with_name(f".{marker.name}.lock")
+    if not marker.is_dir() and not lock.exists():
         return None
     try:
-        stale, why = _marker_is_stale(marker)
+        with file_lock(lock):
+            if not marker.is_dir():
+                return None
+            stale, why = _marker_is_stale(marker)
+    except LockBusyError:
+        # Another namespace's PID is not visible here; the OS lock proves occupancy.
+        stale, why = False, "独占锁正在使用"
     except OSError:
         return None
     if stale:
@@ -696,6 +734,7 @@ def exclusive_run(marker: Path) -> Iterator[None]:
                 shutil.rmtree(marker)
             marker.mkdir()
             try:
+                process = _process_start(os.getpid())
                 write_json_atomic(
                     marker / "owner.json",
                     {
@@ -703,6 +742,7 @@ def exclusive_run(marker: Path) -> Iterator[None]:
                         "host": socket.gethostname(),
                         "since": time.time(),
                         "identity": identity,
+                        "process_identity": process[0] if process else None,
                     },
                 )
                 yield

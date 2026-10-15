@@ -1,5 +1,6 @@
 .git
 .venv
+.spark-updater
 data
 .env
 .env.*

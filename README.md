@@ -138,6 +138,35 @@ Docker 快速部署在后台运行，默认不自动重启；宿主机重启后�
 
 ## 版本更新
 
+### 自动检查与面板一键更新
+
+支持 Windows、macOS、Linux 原生 Python 部署和 Docker。程序自动检查官方 `main` 分支，
+在「设置 → 程序更新」查看新提交；由你点击安装并重启，保留配置、凭据和抖音登录状态。
+
+原生部署：完成原有安装、停止当前服务后，在项目目录运行：
+
+```bash
+python deploy/update.py native
+```
+
+Linux / macOS 可将 `python` 替换为 `python3`。管理器使用项目 `.venv` 启动面板；
+原先使用其他 Python、配置文件或端口时，需传入对应参数。
+
+Docker：宿主机需有 **Python 3.11+**。完成首次 Docker 初始化、停止当前服务后运行：
+
+```bash
+docker compose stop local
+python3 deploy/update.py docker --service local
+```
+
+HTTPS 部署将两处 `local` 改为 `spark`。管理器在前台运行，需保持终端或由现有服务管理器托管；
+按 Ctrl+C 同时停止面板和更新管理器。未使用管理器启动时仍能检查更新，并显示启用说明。
+
+更新遇到本地源码改动、活动任务、上游分叉或网络错误时会停止；新版本启动失败会尝试恢复旧版。
+完整参数、Docker 权限和失败恢复参见 [程序更新指南](docs/updates.md)。
+
+### 手动更新
+
 在项目目录执行，更新后保留已有配置和用户数据。
 
 Docker 快速部署：

@@ -48,4 +48,4 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.setuptools.package-data]
-dyspark = ["gui_static/*", "managed_node.cjs"]
+dyspark = ["gui_static/*", "managed_node.cjs", "_build.json"]

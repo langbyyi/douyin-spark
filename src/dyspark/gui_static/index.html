@@ -220,6 +220,19 @@
     </section>
 
     <section id="tab-settings" class="panel">
+      <div class="card" id="update-card">
+        <div class="section-title"><h3>程序更新</h3><span id="update-badge" class="pill" aria-live="polite">正在读取</span></div>
+        <dl class="schedule-details">
+          <div><dt>当前版本</dt><dd id="update-current">—</dd></div>
+          <div><dt>最新版本</dt><dd id="update-latest">—</dd></div>
+          <div><dt>上次检查</dt><dd id="update-checked">尚未检查</dd></div>
+        </dl>
+        <p id="update-summary" class="hint"></p>
+        <p id="update-progress" class="msg" role="status" aria-live="polite"></p>
+        <div class="row"><button type="button" id="update-check" class="ghost">检查更新</button><button type="button" id="update-apply" disabled>更新并重启</button></div>
+        <p id="update-error" class="msg err" role="alert"></p>
+        <p id="update-help" class="hint">自动检查新版本，由你决定何时更新。<a href="/docs/updates" target="_blank" rel="noopener">启用与恢复说明</a></p>
+      </div>
       <div class="card" id="notification-card">
         <div class="section-title">
           <h3>推送通知</h3>
@@ -305,6 +318,7 @@
     </form>
   </dialog>
   <script src="/static/panel-settings.js?v={{STAMP}}"></script>
+  <script src="/static/updates.js?v={{STAMP}}"></script>
   <script src="/static/message-templates.js?v={{STAMP}}"></script>
   <script src="/static/account-controls.js?v={{STAMP}}"></script>
   <script src="/static/avatars.js?v={{STAMP}}"></script>

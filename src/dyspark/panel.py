@@ -16,6 +16,7 @@ import threading
 import unicodedata
 from collections.abc import Callable
 from datetime import date, datetime
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,8 @@ from dyspark.login_transport import LoginResponse, LoginTransportError, request_
 from dyspark.messages import message_presets
 from dyspark.overview import account_view, run_logs, service_logs, snapshot
 from dyspark.store import DataDir, Ledger, SparkRecord, marker_owner, read_json
+from dyspark.update_state import UpdateError
+from dyspark.update_state import operation as update_operation
 from dyspark.weblogin import Status
 
 LOGIN_START_WAIT = 45.0
@@ -65,6 +68,18 @@ POLL_JOB_KINDS = ("run", "check", "friends")
 
 class PanelError(ValueError):
     """User-facing refusal from a panel / MCP / GUI action."""
+
+
+def _mutation(method):
+    @wraps(method)
+    def guarded(self, *args, **kwargs):
+        try:
+            with update_operation(self.settings().data_dir):
+                return method(self, *args, **kwargs)
+        except UpdateError as exc:
+            raise PanelError(str(exc)) from exc
+
+    return guarded
 
 
 def _clamp(seconds: float | None, default: float) -> float:
@@ -209,6 +224,12 @@ class Backend:
                 f"另一个 dyspark 进程正在使用数据目录（{owner.get('detail')}），请稍后再试"
             )
 
+    def update_idle(self) -> None:
+        settings = self.settings()
+        jobs = self.jobs(settings)
+        with self._start_lock:
+            self._ensure_idle(settings, jobs)
+
     def _start(self, settings: Settings, kind: str, args: list[str]) -> Job:
         jobs = self.jobs(settings)
         with self._start_lock:
@@ -272,6 +293,7 @@ class Backend:
         view["scheduler"] = self.scheduler_status()
         return view
 
+    @_mutation
     def account_control(self, operation: str, payload: dict[str, Any]) -> dict[str, Any]:
         from dyspark.account_controls import AccountControls
         from dyspark.config_edit import ConfigEditError
@@ -335,6 +357,7 @@ class Backend:
             "error": None,
         }
 
+    @_mutation
     def control_schedule(self, enabled: bool) -> dict[str, Any]:
         import tomlkit
 
@@ -356,6 +379,7 @@ class Backend:
             else "自动计划已停用；已开始的任务仍按账号保护执行",
         }
 
+    @_mutation
     def control_mcp(self, enabled: bool) -> dict[str, Any]:
         import tomlkit
 
@@ -375,6 +399,7 @@ class Backend:
             "message": "MCP 已开启。" if enabled else "MCP 已关闭。",
         }
 
+    @_mutation
     def notifications(self, test: bool = False) -> dict[str, Any]:
         from dyspark.notify import Notifier
 
@@ -416,6 +441,7 @@ class Backend:
             result["message"] = "测试通知已发送"
         return result
 
+    @_mutation
     def save_notifications(
         self,
         serverchan_key: str | None,
@@ -565,6 +591,7 @@ class Backend:
 
         return {**describe(self.settings(), self.config_path), "scheduler": self.scheduler_status()}
 
+    @_mutation
     def save_schedule(self, times: object) -> dict[str, Any]:
         from dyspark.config_edit import ConfigEditError
         from dyspark.schedule import set_times
@@ -609,6 +636,7 @@ class Backend:
     def remove_friend(self, account: str | None, name: str) -> dict[str, Any]:
         return self._edit(remove_friend, account, name, "已移除")
 
+    @_mutation
     def replace_friends(self, account: str | None, names: list[str]) -> dict[str, Any]:
         target = self.account(self.settings(), account)
         try:
@@ -621,6 +649,7 @@ class Backend:
             "message": f"已写入 {len(friends)} 个好友，下次运行生效",
         }
 
+    @_mutation
     def _edit(
         self,
         edit: Callable[[Path, str, object], list[str]],
@@ -761,6 +790,7 @@ class Backend:
         except SettingsError as exc:
             raise PanelError(str(exc)) from exc
 
+    @_mutation
     def _resolve_new_account_proxy(self, proxy_ref: str) -> str:
         """Resolve an add/update proxy into a ``${VAR}`` reference.
 

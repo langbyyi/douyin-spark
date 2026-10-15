@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-15",
+  "platform": "Linux-6.19.14+kali-amd64-x86_64-with-glibc2.43",
+  "python": "3.14.6",
+  "pytest": "76 passed; 0 skipped",
+  "node": "4 passed",
+  "checks": {
+    "pytest": {
+      "exit_code": 0,
+      "seconds": 4.89
+    },
+    "node": {
+      "exit_code": 0,
+      "seconds": 0.11
+    },
+    "ruff": {
+      "exit_code": 0,
+      "seconds": 0.07
+    },
+    "format": {
+      "exit_code": 0,
+      "seconds": 0.03
+    },
+    "dependencies": {
+      "exit_code": 0,
+      "seconds": 0.19
+    },
+    "wheel": {
+      "exit_code": 0,
+      "seconds": 2.06
+    }
+  },
+  "end_to_end": [
+    {
+      "mode": "docker",
+      "service": "local",
+      "initial": "d11fc1d4f27567339aedb2d0b7cb8008a18b46c9",
+      "healthy": "298017500c9ac8d25fde35892925421326616e45",
+      "rejected": "0cba17cbdf909528dcbb78359f912c43ccf633ff",
+      "rollback": true,
+      "data_preserved": true,
+      "source_unchanged": true,
+      "base": "/tmp/dyspark-verify-p04vgkb7/dyspark-e2e-bmyvde7d"
+    },
+    {
+      "mode": "native",
+      "service": "local",
+      "initial": "0867a39840d39c0ddbf86f97b214c77cb228361e",
+      "healthy": "a9fcee2442f14b75ecfab2d6676caaef268d4335",
+      "rejected": "0c6fb90f4450aa6b2d9004e3de014f3575e73fde",
+      "rollback": true,
+      "data_preserved": true,
+      "source_unchanged": true,
+      "base": "/tmp/dyspark-verify-p04vgkb7/dyspark-e2e-top55s6i"
+    },
+    {
+      "mode": "docker",
+      "service": "spark",
+      "initial": "b008104476c965fa4cda8de8f4860754d43ad919",
+      "healthy": "346f5f50507f35eae4aab7be4cfbfbfbe981ca96",
+      "rejected": "98399eaca8bec0f429ca462062af1acc6f5acfdc",
+      "rollback": true,
+      "data_preserved": true,
+      "source_unchanged": true,
+      "base": "/tmp/dyspark-verify-p04vgkb7/dyspark-e2e-ttjqa2eo"
+    }
+  ],
+  "macos_verified": false,
+  "workspace": "/tmp/dyspark-verify-p04vgkb7",
+  "source_sha256": {
+    "src/dyspark/update_deploy.py": "7f486f39cb9c1459c7d15aa68eaad494b9afa31959ba11edf38873abcf5307a5",
+    "src/dyspark/update_manager.py": "65a5e40ef1f13b44a9e332a3cb41cee3da037db56a59b259041304bb570497bc",
+    "src/dyspark/update_state.py": "6b7c7957c93441ca08fdd2d161b297e90328c54a8c28ff0485c441ec02cce8f0",
+    "src/dyspark/update_source.py": "5c4756e570e5608cd9b8104926853dabd97e75892a9c7f6f88951063bbd8cc41",
+    "src/dyspark/updates.py": "823c3d237a64cf5afc1333e6c0e36ebae6fe428e974c9d92c3a7c7f82bf486ba",
+    "src/dyspark/process_scope.py": "088035ca08cadc9303d871362eec7e0d1c240ff2220d6f3578f1e40ba12cfce8",
+    "tests/verify_update_e2e.py": "f8b71bfd00de23ff5025c3d6072d3e46d91ff6c590b9ec1ec91c3095510c35d5"
+  }
+}

@@ -1,9 +1,14 @@
 .venv/
+.spark-updater/
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
-/tests/
+/tests/*
+!/tests/test_scheduler_restart.py
+!/tests/test_updates.py
+!/tests/verify_update_e2e.py
+!/tests/update-ui.test.cjs
 .ruff_cache/
 .mypy_cache/
 .coverage

@@ -34,10 +34,18 @@ POLICY = (
 
 
 class PanelAccessMiddleware:
-    def __init__(self, app: ASGIApp, *, auth: PanelAuth, require_https: bool = False):
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        auth: PanelAuth,
+        require_https: bool = False,
+        health: dict[str, str] | None = None,
+    ):
         self.app = app
         self.auth = auth
         self.require_https = require_https
+        self.health = health or {}
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -52,6 +60,8 @@ class PanelAccessMiddleware:
                 headers["X-Content-Type-Options"] = "nosniff"
                 headers["X-Frame-Options"] = "DENY"
                 headers["Referrer-Policy"] = "no-referrer"
+                for name, value in self.health.items():
+                    headers[name] = value
                 if "Content-Security-Policy" not in headers:
                     headers["Content-Security-Policy"] = POLICY
             await send(message)

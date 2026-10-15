@@ -37,6 +37,8 @@ from typing import Any
 from dyspark.log_text import mask_log_secrets
 from dyspark.runtime import needs_display
 from dyspark.store import DataDir, ensure_private_dir, pid_alive, read_json, write_json_atomic
+from dyspark.update_state import UpdateError
+from dyspark.update_state import operation as update_operation
 
 KINDS = ("run", "check", "login", "friends")
 JOB_ID = re.compile(r"^(run|check|login|friends)-\d{8}-\d{6}-[0-9a-f]{6}$")
@@ -286,8 +288,11 @@ class JobManager:
         return argv
 
     def start(self, kind: str, spark_args: list[str]) -> Job:
-        with self._lifecycle_lock:
-            return self._start_job(kind, spark_args)
+        try:
+            with update_operation(self.data.root), self._lifecycle_lock:
+                return self._start_job(kind, spark_args)
+        except UpdateError as exc:
+            raise JobError(str(exc)) from exc
 
     def _start_job(self, kind: str, spark_args: list[str]) -> Job:
         if self._closed:
