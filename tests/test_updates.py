@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import io
 import json
 import os
 import subprocess
@@ -12,6 +13,69 @@ import pytest
 
 def module(name):
     return importlib.import_module(f"dyspark.{name}")
+
+
+def test_public_check_handles_large_commits_without_fetching_the_diff(tmp_path, monkeypatch):
+    updates = module("updates")
+    head = {"sha": "c" * 40, "commit": {"message": "First release\nRelease details"}}
+    responses = {
+        "https://api.github.com/repos/langbyyi/douyin-spark/commits/main": {
+            **head,
+            "files": [{"patch": "large diff\n" * 20000}],
+        },
+        "https://api.github.com/repos/langbyyi/douyin-spark/commits?sha=main&per_page=1": [head],
+    }
+
+    def respond(request, *, timeout):
+        return io.BytesIO(json.dumps(responses[request.full_url]).encode())
+
+    monkeypatch.setattr(updates.urllib.request, "urlopen", respond)
+    service = updates.UpdateService(tmp_path, idle=lambda: None, commit="a" * 40)
+    service._check_public()
+    result = service.status()
+    assert result["check_error"] is None
+    assert result["latest"] == "c" * 40
+    assert result["summary"] == "First release"
+    assert result["managed"] is False
+    assert result["can_update"] is False
+
+
+@pytest.mark.parametrize("payload", [[], {}, [None], [{"sha": "invalid"}], [1, 2]])
+def test_public_check_rejects_unexpected_commit_list(tmp_path, monkeypatch, payload):
+    updates = module("updates")
+    monkeypatch.setattr(
+        updates.urllib.request,
+        "urlopen",
+        lambda *_args, **_kwargs: io.BytesIO(json.dumps(payload).encode()),
+    )
+    service = updates.UpdateService(tmp_path, idle=lambda: None, commit="a" * 40)
+    service._check_public()
+    result = service.status()
+    assert result["check_error"] is not None
+    assert result["latest"] is None
+    assert result["can_update"] is False
+
+
+def test_public_check_explains_api_rate_limit_and_keeps_last_known_version(tmp_path, monkeypatch):
+    updates = module("updates")
+
+    def limited(*_args, **_kwargs):
+        raise updates.urllib.error.HTTPError(
+            "https://api.github.com",
+            403,
+            "rate limit exceeded",
+            {"X-RateLimit-Remaining": "0"},
+            None,
+        )
+
+    monkeypatch.setattr(updates.urllib.request, "urlopen", limited)
+    service = updates.UpdateService(tmp_path, idle=lambda: None, commit="a" * 40)
+    service._available = {"current": "a" * 40, "latest": "c" * 40}
+    service._check_public()
+    result = service.status()
+    assert "限流" in result["check_error"]
+    assert result["latest"] == "c" * 40
+    assert result["can_update"] is False
 
 
 def test_maintenance_refuses_jobs_and_edits_without_touching_user_data(tmp_path):

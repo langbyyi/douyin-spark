@@ -154,11 +154,14 @@ class UpdateService:
             return
         try:
             request = urllib.request.Request(
-                f"https://api.github.com/repos/langbyyi/douyin-spark/commits/{BRANCH}",
+                f"https://api.github.com/repos/langbyyi/douyin-spark/commits?sha={BRANCH}&per_page=1",
                 headers={"Accept": "application/vnd.github+json", "User-Agent": "dyspark-updater"},
             )
             with urllib.request.urlopen(request, timeout=8) as response:
                 payload = json.loads(response.read(65537))
+            if not isinstance(payload, list) or len(payload) != 1:
+                raise ValueError("invalid commit list")
+            payload = payload[0]
             latest = payload.get("sha")
             if not isinstance(latest, str) or not SHA.fullmatch(latest):
                 raise ValueError("invalid commit")
@@ -169,6 +172,16 @@ class UpdateService:
                 "checked_at": time.time(),
                 "error": None,
             }
+        except urllib.error.HTTPError as exc:
+            limited = exc.code == 429 or (
+                exc.code == 403 and (exc.headers or {}).get("X-RateLimit-Remaining") == "0"
+            )
+            message = (
+                "GitHub API 检查请求被限流，请稍后重试；更新管理器可通过 Git 检查"
+                if limited
+                else f"检查更新失败（GitHub HTTP {exc.code}），请稍后重试"
+            )
+            self._available = {**self._available, "error": message}
         except (OSError, ValueError, TypeError, AttributeError):
             self._available = {**self._available, "error": "检查更新失败，请检查网络后重试"}
         finally:

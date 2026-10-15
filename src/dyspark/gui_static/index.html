@@ -97,6 +97,7 @@
             <select id="login-account" hidden aria-label="登录账号"></select>
             <button type="button" id="btn-login-start">开始登录</button>
             <button type="button" id="btn-login-cancel" class="danger ghost" disabled>取消登录</button>
+            <button type="button" id="login-qr-refresh" class="ghost hidden">刷新二维码</button>
           </div>
           <div id="login-progress" class="login-progress hidden" aria-live="polite">
             <div class="login-progress-heading"><strong id="login-progress-title"></strong><span id="login-elapsed" class="hint"></span></div>
@@ -112,7 +113,6 @@
             <div id="login-qr-placeholder" class="login-qr-placeholder"><span aria-hidden="true">▦</span><strong>二维码登录</strong><p class="hint">开始后使用抖音扫码</p></div>
             <img id="login-qr" class="qr hidden" alt="登录二维码" />
             <button type="button" id="login-image-retry" class="ghost hidden">重新加载图片</button>
-            <button type="button" id="login-qr-refresh" class="ghost hidden">刷新二维码</button>
             <p id="login-url" class="url"></p>
           </div>
           <div id="login-sms" class="hidden">

@@ -7,6 +7,7 @@ __pycache__/
 /tests/*
 !/tests/test_scheduler_restart.py
 !/tests/test_updates.py
+!/tests/test_login_hints.py
 !/tests/verify_update_e2e.py
 !/tests/update-ui.test.cjs
 .ruff_cache/

@@ -3,6 +3,34 @@
 日期：2026-10-15。执行环境：Windows / Python 3.12，以及 Kali Linux / Python 3.14.6。
 所有测试使用临时配置和数据，不更新真实部署。
 
+## v0.1.0 首发复核
+
+2026-10-15 重新执行，使用本次首发代码；旧记录保留在后文。
+
+| 检查 | 结果 |
+| --- | --- |
+| Windows：`PYTHONPATH=src .venv/Scripts/python.exe -m pytest -q -rs --tb=short` | **93 passed，3 skipped** |
+| Kali：`PYTHONPATH=src <临时 venv>/bin/python -m pytest -q -rs --tb=short` | **72 passed，0 skipped** |
+| 两端 Node 前端测试 | **4 passed** |
+| 两端 Ruff / 格式检查 | 通过 |
+| Kali 新建隔离环境 `pip check` | 通过 |
+| Kali 原生、Docker `local`、Docker `spark` 升级演练 | 三组均完成健康版本安装、重启及故意失败版本回滚 |
+| 数据保护 | 三组配置、环境文件、测试登录资料、账本哈希保持一致，源码 Git HEAD 不变 |
+| GitHub 公共检查解析 | 真实轻量接口响应解析通过；验证时临时使用现有 GitHub CLI 认证，凭据未写入项目 |
+
+Windows 执行了项目测试和本地原有、未纳入版本控制的 MCP 测试；Kali 只运行待发布的版本控制测试，
+因此总数不同。Windows 跳过两项 Linux 进程元数据检查和一项无权限创建符号链接的检查。
+Kali 首轮快照未带 Git 信息，两个提交标识检查失败；初始化独立测试仓库后复跑通过。
+
+本次核查发现并修复：普通启动方式请求完整 GitHub 提交详情时，大提交响应约 182KB，超过读取上限而被截断。
+现改为 `commits?sha=main&per_page=1` 轻量接口，补充大提交、异常响应和限流回归测试。
+共享网络出口触发了 GitHub 匿名 API 限流；程序会明确提示，宿主更新管理器的 Git 检查不走该 API。
+
+Kali 演练目录为 `/tmp/dyspark-release-v010-CfosAh`。原生及两种 Docker 服务均通过真实面板 API 提交更新，
+使用独立临时 Git 远端模拟健康与故障提交，没有更改真实 GitHub 历史或用户账号数据。
+Docker `spark` 仍使用回环测试入口及可信代理头，不替代真实 HTTPS / TLS 反向代理验证。
+发布附件中的验证记录保存具体测试提交和结果。
+
 ## 自动检查
 
 | 命令 | 结果 |
@@ -83,4 +111,4 @@ PATH=/tmp/dyspark-verify-p04vgkb7/bin:$PATH PYTHONPATH=src /tmp/dyspark-verify-p
 - Windows 本机的 Docker Desktop Linux Engine 未运行；真实镜像构建、容器替换和回滚已在 Kali 完成。
 - macOS 尚未实机验证，不能将 Windows / Linux 测试视作 macOS 实测。
 - 当前开发 Python 环境的 `pip check` 未通过，存在 fastmcp/mcp、mitmproxy/cryptography、numpy 等与其他工具有关的依赖冲突；本次没有修改该环境。全新项目隔离环境的依赖检查已通过。
-- 官方仓库未发布本次未提交改动；未对真实上游或现有部署执行升级。当前工作区的未提交修改会按设计阻止一键安装，需先保存、集成并发布相应代码。
+- 前一轮记录基于当时未发布的改动；首发复核及发布附件提供本轮结果。带本地修改的源码目录仍会按设计阻止一键安装。

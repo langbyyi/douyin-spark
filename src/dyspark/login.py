@@ -229,6 +229,7 @@ class LoginPage:
             root = self._visible((sel.LOGIN_PANEL,))
         if root is None:
             return None
+        root = self._phone_hint_root(root)
         text = root.inner_text()
         inputs = root.locator(", ".join(sel.PHONE_INPUT))
         for index in range(min(inputs.count(), 10)):
@@ -282,6 +283,23 @@ class LoginPage:
                     continue
                 return choice.locator("xpath=..")
         return None
+
+    def _phone_hint_root(self, root):
+        # Number hints can sit outside the controls; keep action locators narrow.
+        dialog = root.locator("xpath=ancestor-or-self::*[@role='dialog' or @aria-modal='true'][1]")
+        if dialog.count():
+            return dialog
+        fallback = root
+        for _ in range(12):
+            if root.evaluate("el => ['BODY', 'HTML'].includes(el.tagName)"):
+                break
+            if root.locator(f"{sel.CONVERSATION_ROW}, {sel.MESSAGE_BUBBLE}").count():
+                break
+            text = root.inner_text()
+            if any(label in text for label in sel.VERIFY_TEXTS):
+                return root
+            root = root.locator("xpath=..")
+        return fallback
 
     def _sms_root(self):
         root = self._secondary_sms_root()

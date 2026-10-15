@@ -14,6 +14,8 @@
 
 [面板预览](#控制面板预览) · [快速开始](#快速开始) · [访问面板](#访问面板) · [首次使用](#首次使用) · [文档](#文档)
 
+首个版本：[v0.1.0 发布说明](docs/releases/v0.1.0.md) · [GitHub Releases](https://github.com/langbyyi/douyin-spark/releases)
+
 ## 控制面板预览
 
 ![dyspark 登录后的控制面板主页](docs/images/control-panel.jpg)
